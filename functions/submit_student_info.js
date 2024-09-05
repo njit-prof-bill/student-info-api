@@ -5,7 +5,7 @@ exports.handler = async (event) => {
         const data = JSON.parse(event.body);
 
         // Validate the received data
-        if (data.first_name && data.github && data.discord) {
+        if (data.first_name && data.github_username && data.discord_username) {
             return {
                 statusCode: 200,
                 body: JSON.stringify({
