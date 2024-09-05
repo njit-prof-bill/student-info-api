@@ -1,0 +1,11 @@
+{
+    "name": "student-info-api",
+    "version": "1.0.0",
+    "description": "Serverless API for collecting student information",
+    "main": "index.js",
+    "scripts": {
+        "build": "echo 'No build step required'"
+    },
+    "dependencies": {},
+    "devDependencies": {}
+}
