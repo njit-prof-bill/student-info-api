@@ -25,8 +25,24 @@ exports.handler = async (event) => {
             };
         }
 
+        // Check the HTTP method
         if (event.httpMethod === 'POST') {
-            // Handle creating a new record
+            // Check if a record with the same UCID already exists
+            const existingRecords = await table.select({
+                filterByFormula: `{UCID} = '${data.UCID}'`,
+            }).firstPage();
+
+            if (existingRecords.length > 0) {
+                return {
+                    statusCode: 409,  // Conflict
+                    body: JSON.stringify({
+                        status: 'error',
+                        message: 'A record with this UCID already exists.',
+                    }),
+                };
+            }
+
+            // Create a new record since no duplicate UCID was found
             const record = await table.create({
                 'UCID': data.UCID,
                 'first_name': data.first_name,
@@ -50,7 +66,7 @@ exports.handler = async (event) => {
         } else if (event.httpMethod === 'PUT') {
             // Handle updating an existing record
             const records = await table.select({
-                filterByFormula: `{UCID} = '${data.UCID}'`,  // Search for the UCID in the Airtable base
+                filterByFormula: `{UCID} = '${data.UCID}'`,
             }).firstPage();
 
             if (records.length === 0) {
