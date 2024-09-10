@@ -6,27 +6,60 @@ Airtable.configure({
 });
 
 // Set the base ID and table name
-const base = Airtable.base('app4wyTuhKlDjsGA6');  // Replace 'your_base_id' with your Airtable Base ID
-const table = base('student-info');  // Replace 'Student Info' with the correct table name
+const base = Airtable.base('app4wyTuhKlDjsGA6');  // Replace with your Airtable Base ID
+const table = base('student-info');  // Replace with your Airtable table name
 
 exports.handler = async (event) => {
     try {
-        // Parse the request body
-        const data = JSON.parse(event.body);
-
-        // Validate the required fields
-        if (!data.UCID || !data.first_name || !data.last_name || !data.github_username || !data.discord_username || !data.favorite_cartoon || !data.favorite_language || !data.movie_or_game_or_book) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({
-                    status: 'error',
-                    message: 'Missing required fields',
-                }),
-            };
+        // Parse the request body if it's not a GET or DELETE request
+        let data;
+        if (event.httpMethod !== 'GET' && event.httpMethod !== 'DELETE') {
+            data = JSON.parse(event.body);
         }
 
-        // Check the HTTP method
-        if (event.httpMethod === 'POST') {
+        // Handle GET request to retrieve a student's information by UCID
+        if (event.httpMethod === 'GET') {
+            // Extract UCID from query parameters
+            const ucid = event.queryStringParameters?.UCID;
+
+            if (!ucid) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({
+                        status: 'error',
+                        message: 'UCID is required for GET request',
+                    }),
+                };
+            }
+
+            // Find the student by UCID
+            const records = await table.select({
+                filterByFormula: `{UCID} = '${ucid}'`,
+            }).firstPage();
+
+            if (records.length === 0) {
+                return {
+                    statusCode: 404,
+                    body: JSON.stringify({
+                        status: 'error',
+                        message: 'No record found with the provided UCID',
+                    }),
+                };
+            }
+
+            // Return the student's information
+            const record = records[0].fields;
+
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    status: 'success',
+                    data: record,
+                }),
+            };
+
+            // Handle POST request to create a new record
+        } else if (event.httpMethod === 'POST') {
             // Check if a record with the same UCID already exists
             const existingRecords = await table.select({
                 filterByFormula: `{UCID} = '${data.UCID}'`,
@@ -42,7 +75,7 @@ exports.handler = async (event) => {
                 };
             }
 
-            // Create a new record since no duplicate UCID was found
+            // Create a new record
             const record = await table.create({
                 'UCID': data.UCID,
                 'first_name': data.first_name,
@@ -63,8 +96,8 @@ exports.handler = async (event) => {
                 }),
             };
 
+            // Handle PUT request to update an existing record
         } else if (event.httpMethod === 'PUT') {
-            // Handle updating an existing record
             const records = await table.select({
                 filterByFormula: `{UCID} = '${data.UCID}'`,
             }).firstPage();
@@ -79,10 +112,8 @@ exports.handler = async (event) => {
                 };
             }
 
-            // Get the record ID of the found student
             const recordId = records[0].id;
 
-            // Update the student's information in Airtable
             const updatedRecord = await table.update(recordId, {
                 'first_name': data.first_name,
                 'last_name': data.last_name,
@@ -102,8 +133,50 @@ exports.handler = async (event) => {
                 }),
             };
 
+            // Handle DELETE request to remove a student record by UCID
+        } else if (event.httpMethod === 'DELETE') {
+            // Extract UCID from query parameters
+            const ucid = event.queryStringParameters?.UCID;
+
+            if (!ucid) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({
+                        status: 'error',
+                        message: 'UCID is required for DELETE request',
+                    }),
+                };
+            }
+
+            // Find the student by UCID
+            const records = await table.select({
+                filterByFormula: `{UCID} = '${ucid}'`,
+            }).firstPage();
+
+            if (records.length === 0) {
+                return {
+                    statusCode: 404,
+                    body: JSON.stringify({
+                        status: 'error',
+                        message: 'No record found with the provided UCID',
+                    }),
+                };
+            }
+
+            // Delete the student's record
+            const recordId = records[0].id;
+            await table.destroy(recordId);
+
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    status: 'success',
+                    message: 'Record deleted successfully',
+                }),
+            };
+
         } else {
-            // If the method is neither POST nor PUT, return a method not allowed error
+            // If the method is not GET, POST, PUT, or DELETE, return a method not allowed error
             return {
                 statusCode: 405,
                 body: JSON.stringify({
