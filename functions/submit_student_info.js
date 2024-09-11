@@ -22,7 +22,7 @@ exports.handler = async (event) => {
             // Extract UCID from query parameters
             const ucid = event.queryStringParameters?.UCID;
 
-            if (!ucid) {
+            if (!ucid || ucid.trim() === '') {
                 return {
                     statusCode: 400,
                     body: JSON.stringify({
@@ -34,7 +34,7 @@ exports.handler = async (event) => {
 
             // Find the student by UCID
             const records = await table.select({
-                filterByFormula: `{UCID} = '${ucid}'`,
+                filterByFormula: `{UCID} = '${ucid.trim()}'`,
             }).firstPage();
 
             if (records.length === 0) {
@@ -60,9 +60,21 @@ exports.handler = async (event) => {
 
             // Handle POST request to create a new record
         } else if (event.httpMethod === 'POST') {
+            // Ensure UCID is provided and not empty after trimming
+            const ucid = data.UCID?.trim();
+            if (!ucid) {
+                return {
+                    statusCode: 400,  // Bad request
+                    body: JSON.stringify({
+                        status: 'error',
+                        message: 'UCID is required and cannot be empty or blank for creating a new record.',
+                    }),
+                };
+            }
+
             // Check if a record with the same UCID already exists
             const existingRecords = await table.select({
-                filterByFormula: `{UCID} = '${data.UCID}'`,
+                filterByFormula: `{UCID} = '${ucid}'`,
             }).firstPage();
 
             if (existingRecords.length > 0) {
@@ -77,7 +89,7 @@ exports.handler = async (event) => {
 
             // Create a new record
             const record = await table.create({
-                'UCID': data.UCID,
+                'UCID': ucid,
                 'first_name': data.first_name,
                 'last_name': data.last_name,
                 'github_username': data.github_username,
@@ -98,8 +110,20 @@ exports.handler = async (event) => {
 
             // Handle PUT request to update an existing record
         } else if (event.httpMethod === 'PUT') {
+            // Ensure UCID is provided and not empty after trimming
+            const ucid = data.UCID?.trim();
+            if (!ucid) {
+                return {
+                    statusCode: 400,  // Bad request
+                    body: JSON.stringify({
+                        status: 'error',
+                        message: 'UCID is required and cannot be empty or blank for updating a record.',
+                    }),
+                };
+            }
+
             const records = await table.select({
-                filterByFormula: `{UCID} = '${data.UCID}'`,
+                filterByFormula: `{UCID} = '${ucid}'`,
             }).firstPage();
 
             if (records.length === 0) {
@@ -138,7 +162,7 @@ exports.handler = async (event) => {
             // Extract UCID from query parameters
             const ucid = event.queryStringParameters?.UCID;
 
-            if (!ucid) {
+            if (!ucid || ucid.trim() === '') {
                 return {
                     statusCode: 400,
                     body: JSON.stringify({
@@ -150,7 +174,7 @@ exports.handler = async (event) => {
 
             // Find the student by UCID
             const records = await table.select({
-                filterByFormula: `{UCID} = '${ucid}'`,
+                filterByFormula: `{UCID} = '${ucid.trim()}'`,
             }).firstPage();
 
             if (records.length === 0) {
