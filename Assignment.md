@@ -10,16 +10,17 @@ In this assignment, you will research and implement a program or script that sen
 #### What You’ll Need to Do:
 You will write a program or script in **any programming language of your choice** that:
 1. Collects the following information:
-   - **UCID** (Your university ID)
-   - **First Name**
-   - **Last Name**
-   - **GitHub Username**
-   - **Discord Username**
-   - **Favorite Cartoon**
-   - **Favorite Programming Language**
-   - **Your favorite Movie, Game, or Book**
+    - **UCID** (Your university ID)
+    - **First Name**
+    - **Last Name**
+    - **GitHub Username**
+    - **Discord Username**
+    - **Favorite Cartoon**
+    - **Favorite Programming Language**
+    - **Your favorite Movie, Game, or Book**
+    - **Section** (Your class section: must be either `101` or `103`)
 
-2. Sends this information to the provided API endpoint using an HTTP POST request.
+2. Sends this information to the provided API endpoint using an HTTP POST request. **You must include your section number in your submission. Requests without a valid section will be rejected.**
 
 #### Brief Introduction to RESTful APIs:
 A **RESTful API** allows communication between systems over the web using standard HTTP methods. In this assignment, you'll use the **POST** method to send your information to a web server, which will store it in a database.
@@ -33,25 +34,35 @@ To call a RESTful API using a **POST** request, you need to:
 - Set appropriate **headers**, such as `Content-Type`, to specify the format of the data being sent.
 
 ### API Endpoint:
+
 You will send a **POST** request to the following API endpoint:
 
 ```
 https://student-info-api.netlify.app/.netlify/functions/submit_student_info
 ```
 
+**Important:** You must include your section number (`101` or `103`) in your submission. Requests without a valid section will be rejected.
+
 The data should be structured in **JSON** format as follows:
 
 ```json
 {
-  "UCID": "12345678",
-  "first_name": "John",
-  "last_name": "Doe",
-  "github_username": "johndoe",
-  "discord_username": "johndoe#1234",
-  "favorite_cartoon": "SpongeBob SquarePants",
-  "favorite_language": "Rust",
-  "movie_or_game_or_book": "The Lord of the Rings"
+    "UCID": "12345678",
+    "first_name": "John",
+    "last_name": "Doe",
+    "github_username": "johndoe",
+    "discord_username": "johndoe#1234",
+    "favorite_cartoon": "SpongeBob SquarePants",
+    "favorite_language": "Rust",
+    "movie_or_game_or_book": "The Lord of the Rings",
+    "section": "101"
 }
+```
+
+For **GET** or **DELETE** requests, you must include the section as a query parameter:
+
+```
+https://student-info-api.netlify.app/.netlify/functions/submit_student_info?UCID=12345678&section=101
 ```
 
 ### Example: Calling a RESTful API in Rust
@@ -59,46 +70,49 @@ The data should be structured in **JSON** format as follows:
 Here’s an example in **Rust** that demonstrates how to send a POST request to a RESTful API. I used Rust
 specifically to discourage you from simply copying the sample code.
 
-**Code Example**:
+**Code Example (with section):**
 
-   ```rust
-   use reqwest::Client;
-   use serde_json::json;
+```rust
+use reqwest::Client;
+use serde_json::json;
 
-   #[tokio::main]
-   async fn main() -> Result<(), reqwest::Error> {
-       // API endpoint
-       let url = "https://student-info-api.netlify.app/.netlify/functions/submit_student_info";
+#[tokio::main]
+async fn main() -> Result<(), reqwest::Error> {
+    // API endpoint
+    let url = "https://student-info-api.netlify.app/.netlify/functions/submit_student_info";
 
-       // Data to be sent in JSON format
-       let data = json!({
-           "UCID": "12345678",
-           "first_name": "John",
-           "last_name": "Doe",
-           "github_username": "johndoe",
-           "discord_username": "johndoe#1234",
-           "favorite_cartoon": "SpongeBob SquarePants",
-           "favorite_language": "Rust",
-           "movie_or_game_or_book": "The Lord of the Rings"
-       });
+    // Data to be sent in JSON format
+    let data = json!({
+        "UCID": "12345678",
+        "first_name": "John",
+        "last_name": "Doe",
+        "github_username": "johndoe",
+        "discord_username": "johndoe#1234",
+        "favorite_cartoon": "SpongeBob SquarePants",
+        "favorite_language": "Rust",
+        "movie_or_game_or_book": "The Lord of the Rings",
+        "section": "101"
+    });
 
-       // Create a client and send the POST request
-       let client = Client::new();
-       let response = client.post(url)
-           .json(&data)
-           .send()
-           .await?;
+    // Create a client and send the POST request
+    let client = Client::new();
+    let response = client.post(url)
+        .json(&data)
+        .send()
+        .await?;
 
-       // Print the status and response
-       println!("Status: {}", response.status());
-       let body = response.text().await?;
-       println!("Body: {}", body);
+    // Print the status and response
+    println!("Status: {}", response.status());
+    let body = response.text().await?;
+    println!("Body: {}", body);
 
-       Ok(())
-   }
-   ```
+    Ok(())
+}
+```
+
 
 ### Important Considerations:
+- **Section is required**: Your request will be rejected if you do not include a valid section (`101` or `103`).
 - **Error Handling**: Ensure that your program handles errors, such as incorrect data formats or failed requests.
 - **Testing**: Test your program to ensure it successfully sends the correct data to the API and receives a response.
 

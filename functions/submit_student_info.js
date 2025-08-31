@@ -5,23 +5,54 @@ Airtable.configure({
     apiKey: process.env.AIRTABLE_PAT,  // Use the environment variable for your Airtable PAT
 });
 
-// Set the base ID and table name
-const base = Airtable.base('app4wyTuhKlDjsGA6');  // Replace with your Airtable Base ID
-const table = base('student-info');  // Replace with your Airtable table name
+// Helper to get base by section
+function getBaseBySection(section) {
+    if (section === '101') {
+        return Airtable.base('app4wyTuhKlDjsGA6');
+    } else if (section === '103') {
+        return Airtable.base('appCrBgOXJ26txpLe');
+    } else {
+        return null;
+    }
+}
 
 exports.handler = async (event) => {
+
     try {
-        // Parse the request body if it's not a GET or DELETE request
+        // Get section from query or body
+        let section;
         let data;
-        if (event.httpMethod !== 'GET' && event.httpMethod !== 'DELETE') {
+        if (event.httpMethod === 'GET' || event.httpMethod === 'DELETE') {
+            section = event.queryStringParameters?.section;
+        } else {
             data = JSON.parse(event.body);
+            section = data.section;
         }
 
-        // Handle GET request to retrieve a student's information by UCID
-        if (event.httpMethod === 'GET') {
-            // Extract UCID from query parameters
-            const ucid = event.queryStringParameters?.UCID;
+        if (!section || (section !== '101' && section !== '103')) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({
+                    status: 'error',
+                    message: 'Section is required and must be either "101" or "103".',
+                }),
+            };
+        }
 
+        const base = getBaseBySection(section);
+        if (!base) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({
+                    status: 'error',
+                    message: 'Invalid section specified.',
+                }),
+            };
+        }
+        const table = base('student-info');
+
+        if (event.httpMethod === 'GET') {
+            const ucid = event.queryStringParameters?.UCID;
             if (!ucid || ucid.trim() === '') {
                 return {
                     statusCode: 400,
@@ -31,12 +62,9 @@ exports.handler = async (event) => {
                     }),
                 };
             }
-
-            // Find the student by UCID
             const records = await table.select({
                 filterByFormula: `{UCID} = '${ucid.trim()}'`,
             }).firstPage();
-
             if (records.length === 0) {
                 return {
                     statusCode: 404,
@@ -46,10 +74,7 @@ exports.handler = async (event) => {
                     }),
                 };
             }
-
-            // Return the student's information
             const record = records[0].fields;
-
             return {
                 statusCode: 200,
                 body: JSON.stringify({
@@ -57,37 +82,29 @@ exports.handler = async (event) => {
                     data: record,
                 }),
             };
-
-            // Handle POST request to create a new record
         } else if (event.httpMethod === 'POST') {
-            // Ensure UCID is provided and not empty after trimming
             const ucid = data.UCID?.trim();
             if (!ucid) {
                 return {
-                    statusCode: 400,  // Bad request
+                    statusCode: 400,
                     body: JSON.stringify({
                         status: 'error',
                         message: 'UCID is required and cannot be empty or blank for creating a new record.',
                     }),
                 };
             }
-
-            // Check if a record with the same UCID already exists
             const existingRecords = await table.select({
                 filterByFormula: `{UCID} = '${ucid}'`,
             }).firstPage();
-
             if (existingRecords.length > 0) {
                 return {
-                    statusCode: 409,  // Conflict
+                    statusCode: 409,
                     body: JSON.stringify({
                         status: 'error',
                         message: 'A record with this UCID already exists.',
                     }),
                 };
             }
-
-            // Create a new record
             const record = await table.create({
                 'UCID': ucid,
                 'first_name': data.first_name,
@@ -98,7 +115,6 @@ exports.handler = async (event) => {
                 'favorite_language': data.favorite_language,
                 'movie_or_game_or_book': data.movie_or_game_or_book,
             });
-
             return {
                 statusCode: 200,
                 body: JSON.stringify({
@@ -107,25 +123,20 @@ exports.handler = async (event) => {
                     recordId: record.id,
                 }),
             };
-
-            // Handle PUT request to update an existing record
         } else if (event.httpMethod === 'PUT') {
-            // Ensure UCID is provided and not empty after trimming
             const ucid = data.UCID?.trim();
             if (!ucid) {
                 return {
-                    statusCode: 400,  // Bad request
+                    statusCode: 400,
                     body: JSON.stringify({
                         status: 'error',
                         message: 'UCID is required and cannot be empty or blank for updating a record.',
                     }),
                 };
             }
-
             const records = await table.select({
                 filterByFormula: `{UCID} = '${ucid}'`,
             }).firstPage();
-
             if (records.length === 0) {
                 return {
                     statusCode: 404,
@@ -135,9 +146,7 @@ exports.handler = async (event) => {
                     }),
                 };
             }
-
             const recordId = records[0].id;
-
             const updatedRecord = await table.update(recordId, {
                 'first_name': data.first_name,
                 'last_name': data.last_name,
@@ -147,7 +156,6 @@ exports.handler = async (event) => {
                 'favorite_language': data.favorite_language,
                 'movie_or_game_or_book': data.movie_or_game_or_book,
             });
-
             return {
                 statusCode: 200,
                 body: JSON.stringify({
@@ -156,12 +164,8 @@ exports.handler = async (event) => {
                     recordId: updatedRecord.id,
                 }),
             };
-
-            // Handle DELETE request to remove a student record by UCID
         } else if (event.httpMethod === 'DELETE') {
-            // Extract UCID from query parameters
             const ucid = event.queryStringParameters?.UCID;
-
             if (!ucid || ucid.trim() === '') {
                 return {
                     statusCode: 400,
@@ -171,12 +175,9 @@ exports.handler = async (event) => {
                     }),
                 };
             }
-
-            // Find the student by UCID
             const records = await table.select({
                 filterByFormula: `{UCID} = '${ucid.trim()}'`,
             }).firstPage();
-
             if (records.length === 0) {
                 return {
                     statusCode: 404,
@@ -186,11 +187,8 @@ exports.handler = async (event) => {
                     }),
                 };
             }
-
-            // Delete the student's record
             const recordId = records[0].id;
             await table.destroy(recordId);
-
             return {
                 statusCode: 200,
                 body: JSON.stringify({
@@ -198,9 +196,7 @@ exports.handler = async (event) => {
                     message: 'Record deleted successfully',
                 }),
             };
-
         } else {
-            // If the method is not GET, POST, PUT, or DELETE, return a method not allowed error
             return {
                 statusCode: 405,
                 body: JSON.stringify({
@@ -209,10 +205,8 @@ exports.handler = async (event) => {
                 }),
             };
         }
-
     } catch (error) {
         console.error('Error processing request:', error);
-
         return {
             statusCode: 500,
             body: JSON.stringify({
