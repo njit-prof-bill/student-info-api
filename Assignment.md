@@ -46,7 +46,7 @@ The data should be structured in **JSON** format as follows:
 
 ```json
 {
-    "UCID": "12345678",
+    "UCID": "JXD1",
     "first_name": "John",
     "last_name": "Doe",
     "github_username": "johndoe",
