@@ -1,6 +1,5 @@
 ### Assignment: Calling a RESTful API to Submit Your Information
-This assignment is due on Friday, September 13th. I **strongly suggest** that you use our normal class
-period Monday from 6pm to 9pm to complete this assignment; that is more than enough time to finish to simple task.
+This assignment is due on Friday, September 13th.
 
 **! Important ** You will be using this code in another assignment. Keep it in a safe place!
 
