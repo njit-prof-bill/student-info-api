@@ -82,7 +82,7 @@ async fn main() -> Result<(), reqwest::Error> {
 
     // Data to be sent in JSON format
     let data = json!({
-        "UCID": "12345678",
+        "UCID": "JXD",
         "first_name": "John",
         "last_name": "Doe",
         "github_username": "johndoe",
